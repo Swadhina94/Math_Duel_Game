@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Math-DUEL-GAME</title>
+  <script src="https://cdn.jsdelivr.net/npm/@stacks/connect@latest/dist/connect.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@stacks/transactions@latest/dist/transactions.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@stacks/network@latest/dist/network.min.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 12px;
+    }
+    input, button {
+      padding: 8px;
+      margin: 6px 0;
+      width: 100%;
+      font-size: 16px;
+    }
+    button {
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h2>Duel Game (Clarity Smart Contract)</h2>
+  <button id="connect">Connect Wallet</button>
+  <hr />
+  <div>
+    <input id="opponent" placeholder="Opponent STX address" />
+    <button id="startDuel">Start Duel</button>
+  </div>
+  <div>
+    <input id="score" type="number" min="0" max="100" placeholder="Enter your score (0–100)" />
+    <button id="submitScore">Submit Score</button>
+  </div>
+
+  <script>
+    const CONTRACT_ADDRESS = 'YOUR_CONTRACT_ADDRESS'; // e.g., ST123...
+    const CONTRACT_NAME = 'YOUR_CONTRACT_NAME';       // e.g., duel-game
+    const network = new stacksNetwork.StacksTestnet();
+
+    const appDetails = {
+      name: 'Duel Game',
+      icon: window.location.origin + '/favicon.ico',
+    };
+
+    let userSession = new stacksConnect.UserSession({
+      appConfig: new stacksConnect.AppConfig(['store_write']),
+    });
+
+    document.getElementById('connect').onclick = () => {
+      stacksConnect.showConnect({
+        appDetails,
+        userSession,
+        onFinish: () => alert('Wallet connected!'),
+      });
+    };
+
+    document.getElementById('startDuel').onclick = () => {
+      const opponent = document.getElementById('opponent').value;
+      if (!opponent) return alert('Enter opponent STX address');
+
+      stacksConnect.openContractCall({
+        contractAddress: CONTRACT_ADDRESS,
+        contractName: CONTRACT_NAME,
+        functionName: 'start-duel',
+        functionArgs: [
+          stacksTransactions.standardPrincipalCV(opponent),
+        ],
+        network,
+        postConditionMode: stacksTransactions.PostConditionMode.Deny,
+        onFinish: data => {
+          console.log('TX submitted:', data);
+          alert('Duel started!');
+        },
+      });
+    };
+
+    document.getElementById('submitScore').onclick = () => {
+      const score = parseInt(document.getElementById('score').value);
+      if (isNaN(score) || score < 0 || score > 100) {
+        return alert('Invalid score (0–100 only)');
+      }
+
+      stacksConnect.openContractCall({
+        contractAddress: CONTRACT_ADDRESS,
+        contractName: CONTRACT_NAME,
+        functionName: 'submit-score',
+        functionArgs: [
+          stacksTransactions.uintCV(score),
+        ],
+        network,
+        postConditionMode: stacksTransactions.PostConditionMode.Deny,
+        onFinish: data => {
+          console.log('TX submitted:', data);
+          alert('Score submitted!');
+        },
+      });
+    };
+  </script>
+</body>
+</html>
